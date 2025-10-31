@@ -1,4 +1,4 @@
-use pulldown_cmark::{html, Options, Parser, Event, Tag, CowStr, HeadingLevel};
+use pulldown_cmark::{html, CowStr, Event, Options, Parser, Tag};
 use std::path::Path;
 
 fn generate_id(text: &str) -> String {
@@ -26,21 +26,25 @@ pub fn parse_to_html(markdown: &str) -> String {
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_TASKLISTS);
     options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
-    
+
     let parser = Parser::new_ext(markdown, options);
-    
+
     // Collect text content for heading IDs
     let mut events = Vec::new();
     let mut in_heading = false;
-    let mut heading_level = HeadingLevel::H1;
+
     let mut heading_text = String::new();
     let mut heading_start_index = 0;
-    
+
     for event in parser {
         match &event {
-            Event::Start(Tag::Heading { level, .. }) => {
+            Event::Start(Tag::Heading {
+                level: _,
+                id: _,
+                classes: _,
+                attrs: _,
+            }) => {
                 in_heading = true;
-                heading_level = *level;
                 heading_text.clear();
                 heading_start_index = events.len();
                 events.push(event);
@@ -50,13 +54,16 @@ pub fn parse_to_html(markdown: &str) -> String {
                 if !heading_text.is_empty() {
                     let id = generate_id(&heading_text);
                     // Update the heading start event with the ID
-                    if let Some(Event::Start(Tag::Heading { level, classes, .. })) = events.get_mut(heading_start_index) {
-                        *events.get_mut(heading_start_index).unwrap() = Event::Start(Tag::Heading {
-                            level: *level,
-                            id: Some(CowStr::from(id)),
-                            classes: classes.clone(),
-                            attrs: vec![],
-                        });
+                    if let Some(Event::Start(Tag::Heading { level, classes, .. })) =
+                        events.get_mut(heading_start_index)
+                    {
+                        *events.get_mut(heading_start_index).unwrap() =
+                            Event::Start(Tag::Heading {
+                                level: *level,
+                                id: Some(CowStr::from(id)),
+                                classes: classes.clone(),
+                                attrs: vec![],
+                            });
                     }
                 }
                 events.push(event);
@@ -70,10 +77,10 @@ pub fn parse_to_html(markdown: &str) -> String {
             }
         }
     }
-    
+
     let mut html_output = String::new();
     html::push_html(&mut html_output, events.into_iter());
-    
+
     html_output
 }
 
@@ -83,20 +90,25 @@ pub fn parse_to_html_with_base_path(markdown: &str, base_path: &str) -> String {
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_TASKLISTS);
     options.insert(Options::ENABLE_HEADING_ATTRIBUTES);
-    
+
     let parser = Parser::new_ext(markdown, options);
     let base = Path::new(base_path);
     let base_dir = base.parent();
-    
+
     // Collect and transform events
     let mut events = Vec::new();
     let mut in_heading = false;
     let mut heading_text = String::new();
     let mut heading_start_index = 0;
-    
+
     for event in parser {
         match &event {
-            Event::Start(Tag::Heading { level, .. }) => {
+            Event::Start(Tag::Heading {
+                level: _,
+                id: _,
+                classes: _,
+                attrs: _,
+            }) => {
                 in_heading = true;
                 heading_text.clear();
                 heading_start_index = events.len();
@@ -107,13 +119,16 @@ pub fn parse_to_html_with_base_path(markdown: &str, base_path: &str) -> String {
                 if !heading_text.is_empty() {
                     let id = generate_id(&heading_text);
                     // Update the heading start event with the ID
-                    if let Some(Event::Start(Tag::Heading { level, classes, .. })) = events.get_mut(heading_start_index) {
-                        *events.get_mut(heading_start_index).unwrap() = Event::Start(Tag::Heading {
-                            level: *level,
-                            id: Some(CowStr::from(id)),
-                            classes: classes.clone(),
-                            attrs: vec![],
-                        });
+                    if let Some(Event::Start(Tag::Heading { level, classes, .. })) =
+                        events.get_mut(heading_start_index)
+                    {
+                        *events.get_mut(heading_start_index).unwrap() =
+                            Event::Start(Tag::Heading {
+                                level: *level,
+                                id: Some(CowStr::from(id)),
+                                classes: classes.clone(),
+                                attrs: vec![],
+                            });
                     }
                 }
                 events.push(event);
@@ -122,11 +137,17 @@ pub fn parse_to_html_with_base_path(markdown: &str, base_path: &str) -> String {
                 heading_text.push_str(text);
                 events.push(event.clone());
             }
-            Event::Start(Tag::Image { link_type, dest_url, title, id }) => {
-                let new_url = if !dest_url.starts_with("http://") 
-                    && !dest_url.starts_with("https://") 
+            Event::Start(Tag::Image {
+                link_type,
+                dest_url,
+                title,
+                id,
+            }) => {
+                let new_url = if !dest_url.starts_with("http://")
+                    && !dest_url.starts_with("https://")
                     && !dest_url.starts_with("data:")
-                    && base_dir.is_some() {
+                    && base_dir.is_some()
+                {
                     let img_path = base_dir.unwrap().join(dest_url.as_ref());
                     if img_path.exists() {
                         if let Some(absolute) = img_path.to_str() {
@@ -140,11 +161,11 @@ pub fn parse_to_html_with_base_path(markdown: &str, base_path: &str) -> String {
                 } else {
                     dest_url.clone()
                 };
-                events.push(Event::Start(Tag::Image { 
-                    link_type: *link_type, 
-                    dest_url: new_url, 
-                    title: title.clone(), 
-                    id: id.clone() 
+                events.push(Event::Start(Tag::Image {
+                    link_type: *link_type,
+                    dest_url: new_url,
+                    title: title.clone(),
+                    id: id.clone(),
                 }));
             }
             _ => {
@@ -152,10 +173,9 @@ pub fn parse_to_html_with_base_path(markdown: &str, base_path: &str) -> String {
             }
         }
     }
-    
+
     let mut html_output = String::new();
     html::push_html(&mut html_output, events.into_iter());
-    
+
     html_output
 }
-

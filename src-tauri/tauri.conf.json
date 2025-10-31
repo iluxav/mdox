@@ -12,8 +12,8 @@
     "windows": [
       {
         "title": "mdox",
-        "width": 1000,
-        "height": 700,
+        "width": 1200,
+        "height": 900,
         "resizable": true,
         "fullscreen": false,
         "hiddenTitle": true,
@@ -24,7 +24,9 @@
       "csp": null,
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": [
+          "**"
+        ]
       }
     }
   },
@@ -37,7 +39,18 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "md",
+          "markdown"
+        ],
+        "name": "Markdown Document",
+        "description": "Markdown document file",
+        "role": "Editor",
+        "mimeType": "text/markdown"
+      }
     ]
   }
 }
-

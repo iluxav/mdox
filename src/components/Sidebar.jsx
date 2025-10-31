@@ -1,6 +1,7 @@
+import { memo } from "react";
 import "./Sidebar.css";
 
-function Sidebar({ isOpen, recentFiles, currentFile, onFileSelect, onClose }) {
+const Sidebar = memo(function Sidebar({ isOpen, recentFiles, currentFile, onFileSelect, onClose }) {
   const getFileName = (path) => {
     if (!path) return "";
     const parts = path.split(/[/\\]/);
@@ -59,7 +60,7 @@ function Sidebar({ isOpen, recentFiles, currentFile, onFileSelect, onClose }) {
       </div>
     </aside>
   );
-}
+});
 
 export default Sidebar;
 

@@ -1,7 +1,8 @@
+import { memo } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import "./EmptyState.css";
 
-function EmptyState({ onOpenFile }) {
+const EmptyState = memo(function EmptyState({ onOpenFile }) {
   const handleOpenFile = async () => {
     const selected = await open({
       multiple: false,
@@ -42,7 +43,7 @@ function EmptyState({ onOpenFile }) {
       </div>
     </div>
   );
-}
+});
 
 export default EmptyState;
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, memo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useTheme } from "./hooks/useTheme";
@@ -9,6 +9,8 @@ import Editor from "./components/Editor";
 import Toolbar from "./components/Toolbar";
 import EmptyState from "./components/EmptyState";
 import Sidebar from "./components/Sidebar";
+import SearchBar from "./components/SearchBar";
+import Settings from "./components/Settings";
 import "./App.css";
 
 function App() {
@@ -26,13 +28,16 @@ function App() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSplitView, setIsSplitView] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   
   const viewerRef = useRef(null);
   const editorRef = useRef(null);
   const editorScrollingRef = useRef(false);
   const viewerScrollingRef = useRef(false);
 
-  const openFile = async (filePath, addToNav = true) => {
+  const openFile = useCallback(async (filePath, addToNav = true) => {
     if (!filePath) return;
 
     // Check if there are unsaved changes
@@ -57,18 +62,20 @@ function App() {
       setCurrentFile(filePath);
       setIsDirty(false);
       setIsEditMode(false);
+      setError(null);
       
       if (addToNav) {
         navigation.addToHistory(filePath);
       }
       addRecentFile(filePath);
     } catch (err) {
-      setError(err);
+      const errorMessage = typeof err === 'string' ? err : err.message || 'Unknown error occurred';
+      setError(`Failed to open file: ${errorMessage}`);
       console.error("Error opening file:", err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isDirty, currentFile, navigation, addRecentFile]);
 
   const handleEditorChange = useCallback(async (newContent) => {
     setEditedContent(newContent);
@@ -81,8 +88,10 @@ function App() {
         basePath: currentFile 
       });
       setHtmlContent(html);
+      setError(null);
     } catch (err) {
       console.error("Error parsing markdown:", err);
+      // Don't show error to user during typing, just log it
     }
   }, [fileContent, currentFile]);
 
@@ -96,20 +105,23 @@ function App() {
       });
       setFileContent(editedContent);
       setIsDirty(false);
+      setError(null);
     } catch (err) {
-      setError(`Failed to save file: ${err}`);
+      const errorMessage = typeof err === 'string' ? err : err.message || 'Unknown error occurred';
+      setError(`Failed to save file: ${errorMessage}`);
       console.error("Error saving file:", err);
+      alert(`Failed to save file: ${errorMessage}`);
     }
   };
 
-  const toggleEditMode = () => {
+  const toggleEditMode = useCallback(() => {
     if (!currentFile) return;
     setIsEditMode(!isEditMode);
-  };
+  }, [currentFile, isEditMode]);
 
-  const toggleSplitView = () => {
+  const toggleSplitView = useCallback(() => {
     setIsSplitView(!isSplitView);
-  };
+  }, [isSplitView]);
 
   const handleEditorScroll = useCallback((scrollPercentage) => {
     if (!isSplitView || viewerScrollingRef.current) return;
@@ -135,19 +147,19 @@ function App() {
     }, 100);
   }, [isSplitView]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     const prevFile = navigation.goBack();
     if (prevFile) {
       openFile(prevFile, false);
     }
-  };
+  }, [navigation, openFile]);
 
-  const handleForward = () => {
+  const handleForward = useCallback(() => {
     const nextFile = navigation.goForward();
     if (nextFile) {
       openFile(nextFile, false);
     }
-  };
+  }, [navigation, openFile]);
 
   const normalizeId = (id) => {
     // Remove the # and normalize the ID the same way Rust does
@@ -199,8 +211,184 @@ function App() {
     };
   }, []);
 
+  // Drag and drop file opening using Tauri's event system
+  useEffect(() => {
+    console.log('Setting up file drop listeners...');
+    
+    let unlistenDrop;
+    let unlistenHover;
+    let unlistenCancel;
+    
+    const setupFileDrop = async () => {
+      console.log('Inside setupFileDrop function');
+      try {
+        console.log('About to listen for tauri://file-drop');
+        
+        // Try multiple possible event names for file drop
+        const eventNames = [
+          'tauri://file-drop',
+          'tauri://drag-drop',
+          'window-file-drop',
+          'file-drop',
+          'tauri://window-file-drop'
+        ];
+        
+        for (const eventName of eventNames) {
+          try {
+            await listen(eventName, (event) => {
+              console.log(`🎉 FILE DROPPED via ${eventName}!`, event);
+              setIsDragging(false);
+              const paths = Array.isArray(event.payload) ? event.payload : event.payload?.paths;
+              if (paths && Array.isArray(paths) && paths.length > 0) {
+                const filePath = paths[0];
+                console.log('Dropped file path:', filePath);
+                if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
+                  console.log('Opening markdown file...');
+                  openFile(filePath);
+                }
+              }
+            });
+            console.log(`✓ ${eventName} listener registered`);
+          } catch (e) {
+            console.log(`✗ ${eventName} failed:`, e.message);
+          }
+        }
+        
+        // Try hover events
+        const hoverEvents = ['tauri://file-drop-hover', 'tauri://drag-hover', 'file-drop-hover'];
+        for (const eventName of hoverEvents) {
+          try {
+            await listen(eventName, (event) => {
+              console.log(`📋 FILE HOVER via ${eventName}!`, event);
+              setIsDragging(true);
+            });
+            console.log(`✓ ${eventName} listener registered`);
+          } catch (e) {
+            console.log(`✗ ${eventName} failed:`, e.message);
+          }
+        }
+        
+        // Try cancel events
+        const cancelEvents = ['tauri://file-drop-cancelled', 'tauri://drag-cancelled'];
+        for (const eventName of cancelEvents) {
+          try {
+            await listen(eventName, (event) => {
+              console.log(`❌ CANCELLED via ${eventName}!`, event);
+              setIsDragging(false);
+            });
+            console.log(`✓ ${eventName} listener registered`);
+          } catch (e) {
+            console.log(`✗ ${eventName} failed:`, e.message);
+          }
+        }
+        
+        console.log('✅ ALL FILE DROP LISTENERS SETUP COMPLETE');
+      } catch (err) {
+        console.error('❌ FAILED TO SETUP FILE DROP:', err);
+      }
+    };
+    
+    setupFileDrop();
+    
+    return () => {
+      console.log('Cleaning up file drop listeners');
+      if (unlistenDrop) unlistenDrop.then(fn => fn());
+      if (unlistenHover) unlistenHover.then(fn => fn());
+      if (unlistenCancel) unlistenCancel.then(fn => fn());
+    };
+  }, [openFile]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Cmd/Ctrl + S: Save file
+      if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+        event.preventDefault();
+        if (isDirty && isEditMode) {
+          handleSave();
+        }
+      }
+      
+      // Cmd/Ctrl + E: Toggle edit mode
+      if ((event.metaKey || event.ctrlKey) && event.key === 'e') {
+        event.preventDefault();
+        if (currentFile) {
+          toggleEditMode();
+        }
+      }
+      
+      // Cmd/Ctrl + P: Toggle split view
+      if ((event.metaKey || event.ctrlKey) && event.key === 'p') {
+        event.preventDefault();
+        if (isEditMode) {
+          toggleSplitView();
+        }
+      }
+      
+      // Cmd/Ctrl + B: Toggle sidebar
+      if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+        event.preventDefault();
+        setSidebarOpen(!sidebarOpen);
+      }
+      
+      // Cmd/Ctrl + T: Toggle theme
+      if ((event.metaKey || event.ctrlKey) && event.key === 't') {
+        event.preventDefault();
+        toggleTheme();
+      }
+      
+      // Cmd/Ctrl + [: Go back
+      if ((event.metaKey || event.ctrlKey) && event.key === '[') {
+        event.preventDefault();
+        if (navigation.canGoBack) {
+          handleBack();
+        }
+      }
+      
+      // Cmd/Ctrl + ]: Go forward
+      if ((event.metaKey || event.ctrlKey) && event.key === ']') {
+        event.preventDefault();
+        if (navigation.canGoForward) {
+          handleForward();
+        }
+      }
+      
+      // Cmd/Ctrl + F: Search
+      if ((event.metaKey || event.ctrlKey) && event.key === 'f') {
+        event.preventDefault();
+        if (currentFile && !isEditMode) {
+          setSearchOpen(!searchOpen);
+        }
+      }
+      
+      // Cmd/Ctrl + ,: Settings
+      if ((event.metaKey || event.ctrlKey) && event.key === ',') {
+        event.preventDefault();
+        setSettingsOpen(!settingsOpen);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDirty, isEditMode, isSplitView, currentFile, sidebarOpen, navigation, theme]);
+
   return (
-    <div className="app">
+    <div className={`app ${isDragging ? 'dragging' : ''}`}>
+      <SearchBar 
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        content={fileContent}
+      />
+      
+      <Settings 
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+      
       <div className="app-body">
         <Sidebar 
           isOpen={sidebarOpen}
@@ -228,16 +416,25 @@ function App() {
             onToggleSplit={toggleSplitView}
             isDirty={isDirty}
             onSave={handleSave}
+            onOpenSettings={() => setSettingsOpen(true)}
           />
 
           <main className={`main-content ${isSplitView && isEditMode ? "split-view" : ""}`}>
             {isLoading ? (
               <div className="loading">Loading...</div>
-            ) : error ? (
-              <div className="error">
-                <h2>Error</h2>
-                <p>{error}</p>
-              </div>
+          ) : error ? (
+            <div className="error">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <h2>Error</h2>
+              <p>{error}</p>
+              <button className="error-dismiss" onClick={() => setError(null)}>
+                Dismiss
+              </button>
+            </div>
             ) : currentFile ? (
               <>
                 {isEditMode && (

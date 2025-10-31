@@ -6,6 +6,33 @@
   position: relative;
 }
 
+.app.dragging::after {
+  content: "Drop Markdown file here";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 122, 255, 0.1);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 3px dashed rgba(0, 122, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: rgba(0, 122, 255, 0.9);
+  z-index: 10000;
+  pointer-events: none;
+}
+
+:root[data-theme="dark"] .app.dragging::after {
+  background: rgba(10, 132, 255, 0.15);
+  border-color: rgba(10, 132, 255, 0.5);
+  color: rgba(10, 132, 255, 0.9);
+}
+
 .app-body {
   display: flex;
   flex: 1;
@@ -58,15 +85,39 @@
   height: 100%;
   padding: 2rem;
   text-align: center;
+  gap: 1rem;
+}
+
+.error svg {
+  color: var(--error-color);
+  margin-bottom: 0.5rem;
 }
 
 .error h2 {
   color: var(--error-color);
-  margin-bottom: 1rem;
+  margin: 0;
 }
 
 .error p {
   color: var(--text-secondary);
   max-width: 600px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.error-dismiss {
+  padding: 8px 24px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.error-dismiss:hover {
+  opacity: 0.9;
 }
 

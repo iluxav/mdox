@@ -1,7 +1,8 @@
+import { memo } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import "./Toolbar.css";
 
-function Toolbar({ 
+const Toolbar = memo(function Toolbar({ 
   currentFile, 
   onOpenFile, 
   theme, 
@@ -18,6 +19,7 @@ function Toolbar({
   onToggleSplit,
   isDirty,
   onSave,
+  onOpenSettings,
 }) {
   const handleFileInput = async () => {
     const selected = await open({
@@ -172,10 +174,21 @@ function Toolbar({
             </svg>
           )}
         </button>
+        
+        <button 
+          className="toolbar-btn" 
+          onClick={onOpenSettings} 
+          title="Settings (Ctrl/Cmd + ,)"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m-2 2l-4.2 4.2M23 12h-6m-6 0H1m18.2 5.2l-4.2-4.2m-2-2l-4.2-4.2"></path>
+          </svg>
+        </button>
       </div>
     </header>
   );
-}
+});
 
 export default Toolbar;
 

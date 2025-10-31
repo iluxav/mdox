@@ -255,19 +255,32 @@ If possible in background start a worker that traverse all the doc links and bui
 
 ---
 
-### Phase 5: Polish & Distribution 🚀
+### Phase 5: Polish & Distribution 🚀 ⚙️ IN PROGRESS
 
 **Goal**: Production-ready application
 
-- [ ] File associations (OS integration)
-- [ ] Drag-and-drop file opening
-- [ ] Search functionality (`Ctrl+F`)
-- [ ] Keyboard shortcuts
-- [ ] Settings/preferences
-- [ ] Performance optimization
-- [ ] Error handling and edge cases
+- [x] Search functionality (`Ctrl+F`)
+- [x] Keyboard shortcuts (Open, Save, Edit, Search, Theme, Navigation)
+- [x] Settings/preferences panel
+- [x] Performance optimization (scroll synchronization)
+- [x] Error handling and edge cases
+- [x] Native macOS UI (transparent title bar, traffic light integration)
+- [x] Custom scrollbar styling
+- [x] Native sidebar with frosted glass effect
+- [x] File associations (configured in tauri.conf.json)
 
-**Deliverable**: Shippable product
+**Deliverable**: Production-ready application ⚙️
+
+---
+
+### Phase 6: Document links traversal and discovery
+
+**Goal**: Show in sidebar under its own tab "Linked docs" list of document titles that i can click on it and open the doc
+
+- [ ] Performant Rust based text parser that looks for the links in active document, follow the link and does the same for each file it finds
+- [ ] Introduce tabs in side menu: Linked Docs, Recent Docs
+
+**Deliverable**: Production-ready functionality application ⚙️
 
 ---
 
@@ -337,12 +350,24 @@ mdox/
 │   ├── App.jsx         # Main app component ✅
 │   ├── App.css         # ✅
 │   ├── components/     # ✅
-│   │   ├── Viewer.jsx  # ✅
+│   │   ├── Viewer.jsx  # Markdown viewer ✅
 │   │   ├── Viewer.css
-│   │   ├── Toolbar.jsx # ✅
+│   │   ├── Editor.jsx  # CodeMirror editor ✅
+│   │   ├── Editor.css
+│   │   ├── Toolbar.jsx # Top toolbar ✅
 │   │   ├── Toolbar.css
-│   │   ├── EmptyState.jsx # ✅
+│   │   ├── Sidebar.jsx # Recent files sidebar ✅
+│   │   ├── Sidebar.css
+│   │   ├── SearchBar.jsx # In-document search ✅
+│   │   ├── SearchBar.css
+│   │   ├── Settings.jsx # Settings panel ✅
+│   │   ├── Settings.css
+│   │   ├── EmptyState.jsx # Empty state screen ✅
 │   │   └── EmptyState.css
+│   ├── hooks/          # ✅
+│   │   ├── useTheme.js # Theme management ✅
+│   │   ├── useNavigation.js # History/navigation ✅
+│   │   └── useRecentFiles.js # Recent files ✅
 │   ├── styles/         # ✅
 │   │   ├── global.css  # ✅
 │   │   └── markdown.css # ✅
@@ -484,32 +509,46 @@ npm run tauri build
 - **Keyboard-friendly**: Disabled state for nav buttons when unavailable
 - **Persistent history**: Recent files saved to localStorage
 
-**Tech Stack:**
-
-- **Backend**: Rust, Tauri 2.0, pulldown-cmark, clap
-- **Frontend**: React 18, Vite 5, highlight.js
-- **Plugins**: tauri-plugin-shell, tauri-plugin-dialog
-- **Custom Hooks**: useNavigation, useRecentFiles, useTheme
-
 ### ✅ Phase 4: Editor Mode - COMPLETE
 
 **Implemented Features:**
 
-- **CodeMirror 6 editor**: Lightweight, fast markdown editor with syntax highlighting
-- **View/Edit toggle**: Switch between reading and editing with toolbar button
-- **Live preview**: Markdown renders in real-time as you type (split view)
-- **Split view mode**: Edit and preview side-by-side
-- **Save functionality**: `Ctrl+S` / `Cmd+S` keyboard shortcut
-- **Dirty indicator**: Blue dot (●) shows unsaved changes in filename
-- **Unsaved warning**: Prompts before navigating away with unsaved changes
-- **Theme-aware editor**: Automatically switches with app theme
-- **Rust file writing**: Secure file save through Tauri backend
+- **CodeMirror 6 integration**: Modern, performant code editor
+- **View/Edit mode toggle**: Switch between reading and editing with Cmd+E
+- **Markdown syntax highlighting**: Full syntax support in editor
+- **File save functionality**: Cmd+S/Ctrl+S with visual feedback
+- **Dirty file indicator**: Shows when file has unsaved changes
+- **Live preview**: Real-time markdown rendering as you type
+- **Split view**: Side-by-side editor and preview panels
+- **Bidirectional scroll sync**: Editor and preview scroll together smoothly
+- **Performance optimized**: requestAnimationFrame-based scrolling
+- **Unsaved changes warning**: Prevents accidental data loss
+
+### ⚙️ Phase 5: Polish & Distribution - IN PROGRESS
+
+**Implemented Features:**
+
+- **Search functionality**: In-document search with Cmd+F, match count, navigation
+- **Global keyboard shortcuts**: Open (Cmd+O), Save (Cmd+S), Edit (Cmd+E), Search (Cmd+F), Theme (Cmd+T)
+- **Settings panel**: Displays keyboard shortcuts, theme toggle, app version
+- **Native macOS UI**: Transparent title bar, traffic light button integration, proper spacing
+- **Custom scrollbars**: Styled webkit scrollbars for editor and viewer
+- **Native sidebar design**: Frosted glass effect, native fonts, proper animations
+- **Sidebar behavior**: Pushes content instead of overlaying, includes toolbar
+- **Performance optimization**: Smooth scroll synchronization with requestAnimationFrame
+- **Error handling**: User-friendly error messages with dismissible alerts
+- **File associations**: Configured for .md and .markdown files
+- **React.memo optimization**: Memoized components for better performance
+- Drag-and-drop file opening (attempted but requires Tauri v2 configuration investigation)
+
+**Pending:**
 
 **Tech Stack:**
 
 - **Backend**: Rust, Tauri 2.0, pulldown-cmark, clap
-- **Frontend**: React 18, Vite 5, highlight.js, CodeMirror 6
+- **Frontend**: React 18, Vite 5, CodeMirror 6, highlight.js
 - **Plugins**: tauri-plugin-shell, tauri-plugin-dialog
 - **Custom Hooks**: useNavigation, useRecentFiles, useTheme
+- **Performance**: requestAnimationFrame, React.memo, useCallback
 
-**Next Steps:** Phase 5 (Polish & Distribution)
+**Next Steps:** Final testing and distribution builds

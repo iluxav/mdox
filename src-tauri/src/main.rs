@@ -1,12 +1,12 @@
 // Prevents additional console window on Windows in release
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod commands;
-mod markdown;
-mod files;
 mod cli;
+mod commands;
+mod files;
+mod markdown;
 
-use tauri::{Manager, Emitter};
+use tauri::{Emitter, Manager};
 
 fn main() {
     let cli_args = cli::parse_args();
@@ -30,4 +30,3 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
