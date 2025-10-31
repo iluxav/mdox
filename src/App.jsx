@@ -258,15 +258,34 @@ function App() {
   };
 
   useEffect(() => {
-    const unlisten = listen("file-to-open", (event) => {
+    const unlistenFileToOpen = listen("file-to-open", (event) => {
       // Opening from CLI = root file
       openFile(event.payload, { isRootFile: true });
     });
 
+    const unlistenMenuOpen = listen("menu-open-file", async () => {
+      // Menu triggered open - show file picker
+      const { open } = await import("@tauri-apps/plugin-dialog");
+      const selected = await open({
+        multiple: false,
+        filters: [
+          {
+            name: "Markdown",
+            extensions: ["md", "markdown"],
+          },
+        ],
+      });
+
+      if (selected) {
+        openFile(selected, { isRootFile: true });
+      }
+    });
+
     return () => {
-      unlisten.then((fn) => fn());
+      unlistenFileToOpen.then((fn) => fn());
+      unlistenMenuOpen.then((fn) => fn());
     };
-  }, []);
+  }, [openFile]);
 
   // Drag and drop file opening using Tauri's event system
   useEffect(() => {

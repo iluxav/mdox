@@ -7,7 +7,10 @@ mod files;
 mod link_discovery;
 mod markdown;
 
-use tauri::{Emitter, Manager};
+use tauri::{
+    menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder},
+    Emitter, Manager,
+};
 
 fn main() {
     let cli_args = cli::parse_args();
@@ -25,6 +28,34 @@ fn main() {
         .setup({
             let cli_args = cli_args.clone();
             move |app| {
+                // Build native menu
+                let open_item = MenuItemBuilder::new("Open")
+                    .id("open_file")
+                    .accelerator("CmdOrCtrl+O")
+                    .build(app)?;
+
+                let file_submenu = SubmenuBuilder::new(app, "File")
+                    .item(&open_item)
+                    .separator()
+                    .close_window()
+                    .build()?;
+
+                let menu = MenuBuilder::new(app).item(&file_submenu).build()?;
+
+                app.set_menu(menu)?;
+
+                // Handle menu events
+                app.on_menu_event(move |app, event| {
+                    if event.id() == "open_file" {
+                        if let Some(window) = app.get_webview_window("main") {
+                            if let Err(e) = window.emit("menu-open-file", ()) {
+                                eprintln!("Failed to emit 'menu-open-file': {}", e);
+                            }
+                        }
+                    }
+                });
+
+                // Handle CLI file argument
                 if let Some(file_path) = &cli_args.file {
                     if let Some(window) = app.get_webview_window("main") {
                         if let Err(e) = window.emit("file-to-open", file_path) {
