@@ -56,6 +56,8 @@ const Settings = memo(function Settings({ isOpen, onClose, theme, onToggleTheme 
 
           <div className="settings-section">
             <h3>Keyboard Shortcuts</h3>
+
+            <h4 className="shortcuts-category">General</h4>
             <div className="shortcuts-list">
               <div className="shortcut-item">
                 <span>Toggle Theme</span>
@@ -63,7 +65,7 @@ const Settings = memo(function Settings({ isOpen, onClose, theme, onToggleTheme 
               </div>
               <div className="shortcut-item">
                 <span>Toggle Sidebar</span>
-                <kbd>Ctrl/Cmd + B</kbd>
+                <kbd>Ctrl/Cmd + \</kbd>
               </div>
               <div className="shortcut-item">
                 <span>Toggle Edit Mode</span>
@@ -88,6 +90,46 @@ const Settings = memo(function Settings({ isOpen, onClose, theme, onToggleTheme 
               <div className="shortcut-item">
                 <span>Go Forward</span>
                 <kbd>Ctrl/Cmd + ]</kbd>
+              </div>
+            </div>
+
+            <h4 className="shortcuts-category">Markdown Editing (Edit Mode Only)</h4>
+            <div className="shortcuts-list">
+              <div className="shortcut-item">
+                <span>Bold</span>
+                <kbd>Ctrl/Cmd + B</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span>Italic</span>
+                <kbd>Ctrl/Cmd + I</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span>Insert Link</span>
+                <kbd>Ctrl/Cmd + K</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span>Inline Code</span>
+                <kbd>Ctrl/Cmd + `</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span>Code Block</span>
+                <kbd>Ctrl/Cmd + Shift + C</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span>List Item</span>
+                <kbd>Ctrl/Cmd + Shift + L</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span>Heading 1</span>
+                <kbd>Ctrl/Cmd + Shift + 1</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span>Heading 2</span>
+                <kbd>Ctrl/Cmd + Shift + 2</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span>Heading 3</span>
+                <kbd>Ctrl/Cmd + Shift + 3</kbd>
               </div>
             </div>
           </div>

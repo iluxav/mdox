@@ -2,6 +2,7 @@
   flex: 1;
   overflow-y: auto;
   background: var(--viewer-bg);
+  height: 100%;
 }
 
 .viewer::-webkit-scrollbar {

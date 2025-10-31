@@ -9,6 +9,14 @@ const Viewer = forwardRef(({ htmlContent, onLinkClick, onScroll }, ref) => {
   const contentRef = useRef(null);
   const viewerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
+  const onScrollRef = useRef(onScroll);
+  const onLinkClickRef = useRef(onLinkClick);
+
+  // Keep refs updated
+  useEffect(() => {
+    onScrollRef.current = onScroll;
+    onLinkClickRef.current = onLinkClick;
+  }, [onScroll, onLinkClick]);
 
   useImperativeHandle(ref, () => ({
     scrollToPercentage: (percentage) => {
@@ -42,11 +50,11 @@ const Viewer = forwardRef(({ htmlContent, onLinkClick, onScroll }, ref) => {
       links.forEach((link) => {
         link.addEventListener("click", (e) => {
           const href = link.getAttribute("href");
-          
+
           // Only handle internal links and file links
           if (href && !href.startsWith("http://") && !href.startsWith("https://")) {
             e.preventDefault();
-            onLinkClick(href);
+            onLinkClickRef.current(href);
           }
           // External links open in browser (handled by Tauri)
         });
@@ -59,21 +67,21 @@ const Viewer = forwardRef(({ htmlContent, onLinkClick, onScroll }, ref) => {
         });
       };
     }
-  }, [htmlContent, onLinkClick]);
+  }, [htmlContent]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
-    if (!viewer || !onScroll) return;
+    if (!viewer) return;
 
     const handleScroll = () => {
-      if (scrollTimeoutRef.current === null) {
+      if (onScrollRef.current && scrollTimeoutRef.current === null) {
         const scrollPercentage = viewer.scrollTop / (viewer.scrollHeight - viewer.clientHeight);
-        
+
         scrollTimeoutRef.current = setTimeout(() => {
           scrollTimeoutRef.current = null;
         }, 50);
-        
-        onScroll(scrollPercentage);
+
+        onScrollRef.current(scrollPercentage);
       }
     };
 
@@ -84,7 +92,7 @@ const Viewer = forwardRef(({ htmlContent, onLinkClick, onScroll }, ref) => {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, [onScroll]);
+  }, []); // Only set up once
 
   return (
     <div className="viewer" ref={viewerRef}>

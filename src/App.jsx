@@ -29,18 +29,21 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSplitView, setIsSplitView] = useState(false);
+  const [splitPosition, setSplitPosition] = useState(50); // percentage
+  const [isResizingSplit, setIsResizingSplit] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  
+
   // Link discovery only runs for the root file
   const { linkedDocs, isLoading: isLoadingLinked } = useLinkedDocs(rootFile);
-  
+
   const viewerRef = useRef(null);
   const editorRef = useRef(null);
   const editorScrollingRef = useRef(false);
   const viewerScrollingRef = useRef(false);
+  const mainContentRef = useRef(null);
 
   const openFile = useCallback(async (filePath, options = {}) => {
     if (!filePath) return;
@@ -157,7 +160,7 @@ function App() {
 
   const handleViewerScroll = useCallback((scrollPercentage) => {
     if (!isSplitView || editorScrollingRef.current) return;
-    
+
     viewerScrollingRef.current = true;
     if (editorRef.current) {
       editorRef.current.scrollToPercentage(scrollPercentage);
@@ -166,6 +169,38 @@ function App() {
       viewerScrollingRef.current = false;
     }, 100);
   }, [isSplitView]);
+
+  // Split view resize handlers
+  useEffect(() => {
+    if (!isResizingSplit) return;
+
+    const handleMouseMove = (e) => {
+      if (mainContentRef.current) {
+        const rect = mainContentRef.current.getBoundingClientRect();
+        const newPosition = ((e.clientX - rect.left) / rect.width) * 100;
+        if (newPosition >= 20 && newPosition <= 80) {
+          setSplitPosition(newPosition);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSplit(false);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizingSplit]);
+
+  const handleSplitResizeStart = useCallback((e) => {
+    e.preventDefault();
+    setIsResizingSplit(true);
+  }, []);
 
   const handleBack = useCallback(() => {
     const prevFile = navigation.goBack();
@@ -348,8 +383,8 @@ function App() {
         }
       }
       
-      // Cmd/Ctrl + B: Toggle sidebar
-      if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+      // Cmd/Ctrl + \ : Toggle sidebar (only when not in edit mode to avoid conflict with Bold)
+      if ((event.metaKey || event.ctrlKey) && event.key === '\\') {
         event.preventDefault();
         setSidebarOpen(!sidebarOpen);
       }
@@ -444,7 +479,10 @@ function App() {
             onOpenSettings={() => setSettingsOpen(true)}
           />
 
-          <main className={`main-content ${isSplitView && isEditMode ? "split-view" : ""}`}>
+          <main
+            ref={mainContentRef}
+            className={`main-content ${isSplitView && isEditMode ? "split-view" : ""} ${isResizingSplit ? "resizing" : ""}`}
+          >
             {isLoading ? (
               <div className="loading">Loading...</div>
           ) : error ? (
@@ -463,23 +501,40 @@ function App() {
             ) : currentFile ? (
               <>
                 {isEditMode && (
-                  <Editor 
-                    ref={editorRef}
-                    content={editedContent}
-                    onChange={handleEditorChange}
-                    onSave={handleSave}
-                    theme={theme}
-                    onScroll={isSplitView ? handleEditorScroll : null}
+                  <div
+                    className="split-panel editor-panel"
+                    style={isSplitView ? { width: `${splitPosition}%` } : {}}
+                  >
+                    <Editor
+                      ref={editorRef}
+                      content={editedContent}
+                      onChange={handleEditorChange}
+                      onSave={handleSave}
+                      theme={theme}
+                      onScroll={isSplitView ? handleEditorScroll : null}
+                    />
+                  </div>
+                )}
+                {isSplitView && isEditMode && (
+                  <div
+                    className="split-resize-handle"
+                    style={{ left: `calc(${splitPosition}% - 4px)` }}
+                    onMouseDown={handleSplitResizeStart}
                   />
                 )}
                 {(!isEditMode || isSplitView) && (
-                  <Viewer 
-                    ref={viewerRef}
-                    htmlContent={htmlContent} 
-                    onLinkClick={handleLinkClick}
-                    currentFile={currentFile}
-                    onScroll={isSplitView ? handleViewerScroll : null}
-                  />
+                  <div
+                    className="split-panel viewer-panel"
+                    style={isSplitView ? { width: `${100 - splitPosition}%` } : {}}
+                  >
+                    <Viewer
+                      ref={viewerRef}
+                      htmlContent={htmlContent}
+                      onLinkClick={handleLinkClick}
+                      currentFile={currentFile}
+                      onScroll={isSplitView ? handleViewerScroll : null}
+                    />
+                  </div>
                 )}
               </>
             ) : (

@@ -142,6 +142,19 @@
   background: var(--hover-bg);
 }
 
+.shortcuts-category {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 20px 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.shortcuts-category:first-of-type {
+  margin-top: 0;
+}
+
 .shortcuts-list {
   display: flex;
   flex-direction: column;
