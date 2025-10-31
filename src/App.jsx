@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useTheme } from "./hooks/useTheme";
 import { useNavigation } from "./hooks/useNavigation";
 import { useRecentFiles } from "./hooks/useRecentFiles";
+import { useLinkedDocs } from "./hooks/useLinkedDocs";
 import Viewer from "./components/Viewer";
 import Editor from "./components/Editor";
 import Toolbar from "./components/Toolbar";
@@ -19,6 +20,7 @@ function App() {
   const { recentFiles, addRecentFile } = useRecentFiles();
   
   const [currentFile, setCurrentFile] = useState(null);
+  const [rootFile, setRootFile] = useState(null); // The main entry point file
   const [fileContent, setFileContent] = useState("");
   const [editedContent, setEditedContent] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
@@ -32,13 +34,22 @@ function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   
+  // Link discovery only runs for the root file
+  const { linkedDocs, isLoading: isLoadingLinked } = useLinkedDocs(rootFile);
+  
   const viewerRef = useRef(null);
   const editorRef = useRef(null);
   const editorScrollingRef = useRef(false);
   const viewerScrollingRef = useRef(false);
 
-  const openFile = useCallback(async (filePath, addToNav = true) => {
+  const openFile = useCallback(async (filePath, options = {}) => {
     if (!filePath) return;
+
+    const { 
+      addToNav = true, 
+      isRootFile = false, // true = opened from file system/recent, false = clicked link
+      addToRecent = true 
+    } = options;
 
     // Check if there are unsaved changes
     if (isDirty && currentFile) {
@@ -64,10 +75,19 @@ function App() {
       setIsEditMode(false);
       setError(null);
       
+      // Only update root file if this is explicitly opened (not a link navigation)
+      if (isRootFile) {
+        setRootFile(filePath);
+      }
+      
       if (addToNav) {
         navigation.addToHistory(filePath);
       }
-      addRecentFile(filePath);
+      
+      // Only add to recent files if it's a root file opening
+      if (addToRecent) {
+        addRecentFile(filePath);
+      }
     } catch (err) {
       const errorMessage = typeof err === 'string' ? err : err.message || 'Unknown error occurred';
       setError(`Failed to open file: ${errorMessage}`);
@@ -150,14 +170,14 @@ function App() {
   const handleBack = useCallback(() => {
     const prevFile = navigation.goBack();
     if (prevFile) {
-      openFile(prevFile, false);
+      openFile(prevFile, { addToNav: false });
     }
   }, [navigation, openFile]);
 
   const handleForward = useCallback(() => {
     const nextFile = navigation.goForward();
     if (nextFile) {
-      openFile(nextFile, false);
+      openFile(nextFile, { addToNav: false });
     }
   }, [navigation, openFile]);
 
@@ -193,7 +213,8 @@ function App() {
           basePath: currentFile,
           relativePath: href,
         });
-        openFile(resolvedPath);
+        // Clicking links in the document = navigation, not root file
+        openFile(resolvedPath, { isRootFile: false, addToRecent: false });
       } catch (err) {
         console.error("Failed to resolve link:", err);
         setError(`Failed to open link: ${href}`);
@@ -203,7 +224,8 @@ function App() {
 
   useEffect(() => {
     const unlisten = listen("file-to-open", (event) => {
-      openFile(event.payload);
+      // Opening from CLI = root file
+      openFile(event.payload, { isRootFile: true });
     });
 
     return () => {
@@ -244,7 +266,8 @@ function App() {
                 console.log('Dropped file path:', filePath);
                 if (filePath.endsWith('.md') || filePath.endsWith('.markdown')) {
                   console.log('Opening markdown file...');
-                  openFile(filePath);
+                  // Drag-and-drop = root file
+                  openFile(filePath, { isRootFile: true });
                 }
               }
             });
@@ -393,6 +416,8 @@ function App() {
         <Sidebar 
           isOpen={sidebarOpen}
           recentFiles={recentFiles}
+          linkedDocs={linkedDocs}
+          isLoadingLinked={isLoadingLinked}
           currentFile={currentFile}
           onFileSelect={openFile}
           onClose={() => setSidebarOpen(false)}

@@ -1,5 +1,6 @@
 use crate::files;
 use crate::markdown;
+use crate::link_discovery;
 
 #[tauri::command]
 pub fn read_file(path: String) -> Result<String, String> {
@@ -24,3 +25,7 @@ pub fn save_file(path: String, content: String) -> Result<(), String> {
     files::write_file_contents(&path, &content)
 }
 
+#[tauri::command]
+pub fn discover_linked_documents(root_path: String, max_depth: usize) -> Result<Vec<link_discovery::LinkedDocument>, String> {
+    link_discovery::discover_linked_documents(&root_path, max_depth)
+}

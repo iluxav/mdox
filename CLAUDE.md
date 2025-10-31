@@ -273,14 +273,14 @@ If possible in background start a worker that traverse all the doc links and bui
 
 ---
 
-### Phase 6: Document links traversal and discovery
+### Phase 6: Document links traversal and discovery ✅ COMPLETE
 
 **Goal**: Show in sidebar under its own tab "Linked docs" list of document titles that i can click on it and open the doc
 
-- [ ] Performant Rust based text parser that looks for the links in active document, follow the link and does the same for each file it finds
-- [ ] Introduce tabs in side menu: Linked Docs, Recent Docs
+- [x] Performant Rust based text parser that looks for the links in active document, follow the link and does the same for each file it finds
+- [x] Introduce tabs in side menu: Linked Docs, Recent Docs
 
-**Deliverable**: Production-ready functionality application ⚙️
+**Deliverable**: Production-ready functionality application ✅
 
 ---
 
@@ -340,7 +340,8 @@ mdox/
 │   │   ├── commands.rs # Tauri commands ✅
 │   │   ├── markdown.rs # Markdown parsing ✅
 │   │   ├── files.rs    # File operations ✅
-│   │   └── cli.rs      # CLI argument parsing ✅
+│   │   ├── cli.rs      # CLI argument parsing ✅
+│   │   └── link_discovery.rs # Link traversal ✅
 │   ├── Cargo.toml      # ✅
 │   ├── tauri.conf.json # Tauri configuration ✅
 │   └── capabilities/   # ✅
@@ -543,12 +544,27 @@ npm run tauri build
 
 **Pending:**
 
+### ✅ Phase 6: Document Links Discovery - COMPLETE
+
+**Implemented Features:**
+
+- **Rust-based link discovery**: High-performance recursive document traversal
+- **Smart link extraction**: Parses markdown to find all local `.md` file links
+- **Recursive traversal**: Follows links up to configurable depth (default: 2 levels)
+- **Cycle prevention**: Uses HashSet to avoid infinite loops
+- **Path resolution**: Correctly resolves relative paths and handles edge cases
+- **Title extraction**: Automatically extracts document titles from first heading
+- **Tabbed sidebar**: "Recent" and "Linked" tabs for organizing documents
+- **Loading states**: Visual feedback while discovering linked documents
+- **Native styling**: Tabs match macOS native design with proper hover/active states
+- **Link icon**: Distinct icon for linked documents vs recent files
+
 **Tech Stack:**
 
 - **Backend**: Rust, Tauri 2.0, pulldown-cmark, clap
 - **Frontend**: React 18, Vite 5, CodeMirror 6, highlight.js
 - **Plugins**: tauri-plugin-shell, tauri-plugin-dialog
-- **Custom Hooks**: useNavigation, useRecentFiles, useTheme
-- **Performance**: requestAnimationFrame, React.memo, useCallback
+- **Custom Hooks**: useNavigation, useRecentFiles, useTheme, useLinkedDocs
+- **Performance**: requestAnimationFrame, React.memo, useCallback, BFS traversal
 
 **Next Steps:** Final testing and distribution builds

@@ -1,6 +1,6 @@
 use clap::Parser;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(name = "mdox")]
 #[command(about = "A blazingly fast Markdown viewer and editor", long_about = None)]
 pub struct CliArgs {

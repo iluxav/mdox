@@ -4,6 +4,7 @@
 mod cli;
 mod commands;
 mod files;
+mod link_discovery;
 mod markdown;
 
 use tauri::{Emitter, Manager};
@@ -19,13 +20,22 @@ fn main() {
             commands::parse_markdown,
             commands::resolve_file_path,
             commands::save_file,
+            commands::discover_linked_documents,
         ])
-        .setup(move |app| {
-            if let Some(file_path) = cli_args.file {
-                let window = app.get_webview_window("main").unwrap();
-                window.emit("file-to-open", file_path).unwrap();
+        .setup({
+            let cli_args = cli_args.clone();
+            move |app| {
+                if let Some(file_path) = &cli_args.file {
+                    if let Some(window) = app.get_webview_window("main") {
+                        if let Err(e) = window.emit("file-to-open", file_path) {
+                            eprintln!("Failed to emit 'file-to-open': {}", e);
+                        }
+                    } else {
+                        eprintln!("Failed to get 'main' webview window");
+                    }
+                }
+                Ok(())
             }
-            Ok(())
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
