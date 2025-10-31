@@ -1,0 +1,74 @@
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--viewer-bg);
+}
+
+.empty-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 2rem;
+}
+
+.icon {
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.empty-content h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.empty-content p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.open-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: white;
+  background: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.open-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.open-btn:active {
+  transform: translateY(0);
+}
+
+.hint {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.hint p {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.hint code {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: var(--code-bg);
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+

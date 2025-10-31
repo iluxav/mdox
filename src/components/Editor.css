@@ -1,0 +1,101 @@
+.editor {
+  flex: 1;
+  overflow: auto;
+  background: var(--viewer-bg);
+  height: 100%;
+}
+
+.editor .cm-editor {
+  height: 100%;
+  font-size: 14px;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+.editor .cm-scroller {
+  overflow: auto;
+  padding: 16px;
+}
+
+.editor .cm-scroller::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.editor .cm-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.editor .cm-scroller::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.editor .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
+  background-clip: padding-box;
+}
+
+.editor .cm-scroller::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.editor .cm-content {
+  padding: 16px 0;
+}
+
+.editor .cm-line {
+  line-height: 1.6;
+  padding: 0 16px;
+}
+
+/* Light theme overrides */
+:root[data-theme="light"] .editor .cm-editor {
+  background: var(--viewer-bg);
+  color: var(--text-primary);
+}
+
+:root[data-theme="light"] .editor .cm-gutters {
+  background: var(--code-bg);
+  border-right: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+:root[data-theme="light"] .editor .cm-activeLineGutter {
+  background: var(--hover-bg);
+}
+
+:root[data-theme="light"] .editor .cm-activeLine {
+  background: rgba(0, 102, 204, 0.05);
+}
+
+:root[data-theme="light"] .editor .cm-cursor {
+  border-left-color: var(--text-primary);
+}
+
+:root[data-theme="light"] .editor .cm-selectionBackground {
+  background: rgba(0, 102, 204, 0.2) !important;
+}
+
+:root[data-theme="light"] .editor .cm-scroller::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  background-clip: padding-box;
+}
+
+:root[data-theme="light"] .editor .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.35);
+  background-clip: padding-box;
+}
+
+/* Dark theme scrollbar overrides */
+:root[data-theme="dark"] .editor .cm-scroller::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  background-clip: padding-box;
+}
+
+:root[data-theme="dark"] .editor .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+  background-clip: padding-box;
+}
+
