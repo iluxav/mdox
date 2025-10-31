@@ -12,15 +12,17 @@ import EmptyState from "./components/EmptyState";
 import Sidebar from "./components/Sidebar";
 import SearchBar from "./components/SearchBar";
 import Settings from "./components/Settings";
+import UrlDialog from "./components/UrlDialog";
 import "./App.css";
 
 function App() {
   const { theme, toggleTheme } = useTheme();
   const navigation = useNavigation();
-  const { recentFiles, addRecentFile } = useRecentFiles();
+  const { recentFiles, addRecentFile, removeRecentFile } = useRecentFiles();
   
   const [currentFile, setCurrentFile] = useState(null);
-  const [rootFile, setRootFile] = useState(null); // The main entry point file
+  const [rootFile, setRootFile] = useState(null); // The main entry point file for link discovery
+  const [displayUrl, setDisplayUrl] = useState(null); // The URL to display in UI (original repo URL)
   const [fileContent, setFileContent] = useState("");
   const [editedContent, setEditedContent] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
@@ -35,9 +37,11 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [urlDialogOpen, setUrlDialogOpen] = useState(false);
+  const [isRemoteFile, setIsRemoteFile] = useState(false);
 
   // Link discovery only runs for the root file
-  const { linkedDocs, isLoading: isLoadingLinked } = useLinkedDocs(rootFile);
+  const { linkedDocs, isLoading: isLoadingLinked } = useLinkedDocs(rootFile, isRemoteFile);
 
   const viewerRef = useRef(null);
   const editorRef = useRef(null);
@@ -48,10 +52,10 @@ function App() {
   const openFile = useCallback(async (filePath, options = {}) => {
     if (!filePath) return;
 
-    const { 
-      addToNav = true, 
+    const {
+      addToNav = true,
       isRootFile = false, // true = opened from file system/recent, false = clicked link
-      addToRecent = true 
+      addToRecent = true
     } = options;
 
     // Check if there are unsaved changes
@@ -60,6 +64,8 @@ function App() {
       if (!confirmed) return;
     }
 
+    // Clear rootFile immediately to stop any ongoing link discovery
+    setRootFile(null);
     setIsLoading(true);
     setError(null);
 
@@ -74,6 +80,8 @@ function App() {
       setEditedContent(content);
       setHtmlContent(html);
       setCurrentFile(filePath);
+      setDisplayUrl(null); // Clear displayUrl for local files
+      setIsRemoteFile(false); // Mark as local file
       setIsDirty(false);
       setIsEditMode(false);
       setError(null);
@@ -100,6 +108,69 @@ function App() {
     }
   }, [isDirty, currentFile, navigation, addRecentFile]);
 
+  const openRemoteFile = useCallback(async (url, options = {}) => {
+    const { addToNav = true, isRootFile = true, addToRecent = true } = options;
+
+    // Check if there are unsaved changes
+    if (isDirty && currentFile) {
+      const confirmed = window.confirm("You have unsaved changes. Do you want to discard them?");
+      if (!confirmed) return;
+    }
+
+    // Clear rootFile immediately to stop any ongoing link discovery
+    setRootFile(null);
+    setIsLoading(true);
+    setError(null);
+    setUrlDialogOpen(false);
+
+    try {
+      const result = await invoke("fetch_remote_file", { url });
+      const content = result.content;
+      const actualUrl = result.url; // The actual URL that was fetched (may be different for GitHub repos)
+
+      const html = await invoke("parse_markdown", {
+        content,
+        basePath: null
+      });
+
+      // Update UI state immediately so document renders
+      setFileContent(content);
+      setEditedContent(content);
+      setHtmlContent(html);
+      setCurrentFile(actualUrl);
+      setDisplayUrl(url);
+      setIsRemoteFile(true);
+      setIsDirty(false);
+      setIsEditMode(false);
+      setError(null);
+      setIsLoading(false); // Stop loading BEFORE link discovery
+
+      // Allow React to render the document first
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      if (addToNav) {
+        navigation.addToHistory(actualUrl);
+      }
+
+      if (addToRecent) {
+        addRecentFile(url);
+      }
+
+      // Start link discovery AFTER document is rendered (non-blocking)
+      if (isRootFile) {
+        // Longer delay to ensure document is fully rendered before starting discovery
+        setTimeout(() => {
+          setRootFile(actualUrl);
+        }, 500);
+      }
+    } catch (err) {
+      const errorMessage = typeof err === 'string' ? err : err.message || 'Unknown error occurred';
+      setError(`Failed to fetch remote file: ${errorMessage}`);
+      console.error("Error fetching remote file:", err);
+      setIsLoading(false);
+    }
+  }, [isDirty, currentFile, navigation, addRecentFile]);
+
   const handleEditorChange = useCallback(async (newContent) => {
     setEditedContent(newContent);
     setIsDirty(newContent !== fileContent);
@@ -121,10 +192,16 @@ function App() {
   const handleSave = async () => {
     if (!currentFile || !isDirty) return;
 
+    // Prevent saving remote files
+    if (isRemoteFile) {
+      alert("Cannot save remote files. Please download and save locally.");
+      return;
+    }
+
     try {
-      await invoke("save_file", { 
-        path: currentFile, 
-        content: editedContent 
+      await invoke("save_file", {
+        path: currentFile,
+        content: editedContent
       });
       setFileContent(editedContent);
       setIsDirty(false);
@@ -202,19 +279,33 @@ function App() {
     setIsResizingSplit(true);
   }, []);
 
+  // Helper function to detect if a path is a URL
+  const isUrl = (path) => {
+    return path && (path.startsWith('http://') || path.startsWith('https://'));
+  };
+
+  // Unified file/URL opener that routes to the correct handler
+  const openFileOrUrl = useCallback((path, options = {}) => {
+    if (isUrl(path)) {
+      openRemoteFile(path, options);
+    } else {
+      openFile(path, options);
+    }
+  }, [openFile, openRemoteFile]);
+
   const handleBack = useCallback(() => {
     const prevFile = navigation.goBack();
     if (prevFile) {
-      openFile(prevFile, { addToNav: false });
+      openFileOrUrl(prevFile, { addToNav: false });
     }
-  }, [navigation, openFile]);
+  }, [navigation, openFileOrUrl]);
 
   const handleForward = useCallback(() => {
     const nextFile = navigation.goForward();
     if (nextFile) {
-      openFile(nextFile, { addToNav: false });
+      openFileOrUrl(nextFile, { addToNav: false });
     }
-  }, [navigation, openFile]);
+  }, [navigation, openFileOrUrl]);
 
   const normalizeId = (id) => {
     // Remove the # and normalize the ID the same way Rust does
@@ -241,8 +332,25 @@ function App() {
       return;
     }
 
-    // Handle relative file links
-    if (!href.startsWith("http://") && !href.startsWith("https://")) {
+    // Handle absolute URLs (remote files)
+    if (href.startsWith("http://") || href.startsWith("https://")) {
+      openRemoteFile(href);
+      return;
+    }
+
+    // Handle relative links
+    if (isRemoteFile) {
+      // For remote files, resolve URL relative to current URL
+      try {
+        const baseUrl = new URL(currentFile);
+        const resolvedUrl = new URL(href, baseUrl).toString();
+        openRemoteFile(resolvedUrl);
+      } catch (err) {
+        console.error("Failed to resolve remote link:", err);
+        setError(`Failed to open link: ${href}`);
+      }
+    } else {
+      // For local files, resolve path
       try {
         const resolvedPath = await invoke("resolve_file_path", {
           basePath: currentFile,
@@ -281,9 +389,15 @@ function App() {
       }
     });
 
+    const unlistenMenuOpenUrl = listen("menu-open-url", () => {
+      // Menu triggered open URL - show URL dialog
+      setUrlDialogOpen(true);
+    });
+
     return () => {
       unlistenFileToOpen.then((fn) => fn());
       unlistenMenuOpen.then((fn) => fn());
+      unlistenMenuOpenUrl.then((fn) => fn());
     };
   }, [openFile]);
 
@@ -378,6 +492,17 @@ function App() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event) => {
+      // Don't intercept keyboard shortcuts when user is typing in an input or textarea
+      const target = event.target;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+      // Allow Cmd+V and other basic editing shortcuts in input fields
+      if (isInput && !(event.key === 's' || event.key === 'e' || event.key === 'p' ||
+          event.key === '\\' || event.key === 't' || event.key === '[' ||
+          event.key === ']' || event.key === 'f' || event.key === ',' || event.key === 'O')) {
+        return; // Let the browser handle it
+      }
+
       // Cmd/Ctrl + S: Save file
       if ((event.metaKey || event.ctrlKey) && event.key === 's') {
         event.preventDefault();
@@ -443,6 +568,12 @@ function App() {
         event.preventDefault();
         setSettingsOpen(!settingsOpen);
       }
+
+      // Cmd/Ctrl + Shift + O: Open from URL
+      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'O') {
+        event.preventDefault();
+        setUrlDialogOpen(true);
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -459,27 +590,36 @@ function App() {
         content={fileContent}
       />
       
-      <Settings 
+      <Settings
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
-      
+
+      <UrlDialog
+        isOpen={urlDialogOpen}
+        onClose={() => setUrlDialogOpen(false)}
+        onSubmit={openRemoteFile}
+      />
+
       <div className="app-body">
-        <Sidebar 
+        <Sidebar
           isOpen={sidebarOpen}
           recentFiles={recentFiles}
           linkedDocs={linkedDocs}
           isLoadingLinked={isLoadingLinked}
           currentFile={currentFile}
-          onFileSelect={openFile}
+          displayUrl={displayUrl}
+          onFileSelect={openFileOrUrl}
+          onRemoveRecent={removeRecentFile}
           onClose={() => setSidebarOpen(false)}
         />
 
         <div className="app-main">
-          <Toolbar 
-            currentFile={currentFile} 
+          <Toolbar
+            currentFile={currentFile}
+            displayUrl={displayUrl}
             onOpenFile={openFile}
             theme={theme}
             onToggleTheme={toggleTheme}
@@ -496,6 +636,7 @@ function App() {
             isDirty={isDirty}
             onSave={handleSave}
             onOpenSettings={() => setSettingsOpen(true)}
+            isRemoteFile={isRemoteFile}
           />
 
           <main

@@ -7,7 +7,9 @@ const Sidebar = memo(function Sidebar({
   linkedDocs,
   isLoadingLinked,
   currentFile,
+  displayUrl,
   onFileSelect,
+  onRemoveRecent,
   onClose
 }) {
   const [activeTab, setActiveTab] = useState("recent");
@@ -17,14 +19,60 @@ const Sidebar = memo(function Sidebar({
 
   const getFileName = (path) => {
     if (!path) return "";
+
+    // Check if it's a GitHub repo URL pattern
+    const githubRepoPattern = /^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(\.git)?$/;
+    const match = path.match(githubRepoPattern);
+
+    if (match) {
+      const repoName = match[2];
+      return `${repoName} - README.md`;
+    }
+
+    // Otherwise extract filename normally
     const parts = path.split(/[/\\]/);
     return parts[parts.length - 1];
   };
 
   const getDirectory = (path) => {
     if (!path) return "";
+
+    // Check if it's a GitHub repo URL pattern
+    const githubRepoPattern = /^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(\.git)?$/;
+    const match = path.match(githubRepoPattern);
+
+    if (match) {
+      const username = match[1];
+      return `github.com/${username}`;
+    }
+
+    // For other URLs, show the domain
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      try {
+        const url = new URL(path);
+        return url.hostname;
+      } catch {
+        return "";
+      }
+    }
+
+    // For local files, extract directory path
     const parts = path.split(/[/\\]/);
     return parts.slice(0, -1).join("/");
+  };
+
+  // Helper to check if a file is the currently active file
+  // For remote files, compare against displayUrl; for local files, compare against currentFile
+  const isActiveFile = (filePath) => {
+    if (!currentFile) return false;
+
+    // Direct match with currentFile (for local files or raw URLs)
+    if (filePath === currentFile) return true;
+
+    // For remote files, also check against displayUrl (the original repo URL)
+    if (displayUrl && filePath === displayUrl) return true;
+
+    return false;
   };
 
   useEffect(() => {
@@ -95,13 +143,12 @@ const Sidebar = memo(function Sidebar({
             ) : (
               <ul className="file-list">
                 {recentFiles.map((file, index) => (
-                  <li 
+                  <li
                     key={index}
-                    className={file === currentFile ? "active" : ""}
-                    onClick={() => onFileSelect(file, { isRootFile: true })}
+                    className={isActiveFile(file) ? "active" : ""}
                     title={file}
                   >
-                    <div className="file-info">
+                    <div className="file-info" onClick={() => onFileSelect(file, { isRootFile: true })}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
                         <polyline points="13 2 13 9 20 9"></polyline>
@@ -111,6 +158,19 @@ const Sidebar = memo(function Sidebar({
                         <span className="file-path">{getDirectory(file)}</span>
                       </div>
                     </div>
+                    <button
+                      className="file-remove"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveRecent(file);
+                      }}
+                      title="Remove from recent files"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
                   </li>
                 ))}
               </ul>

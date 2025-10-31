@@ -28,10 +28,14 @@ export function useRecentFiles() {
     });
   };
 
+  const removeRecentFile = (filePath) => {
+    setRecentFiles((prev) => prev.filter((f) => f !== filePath));
+  };
+
   const clearRecentFiles = () => {
     setRecentFiles([]);
   };
 
-  return { recentFiles, addRecentFile, clearRecentFiles };
+  return { recentFiles, addRecentFile, removeRecentFile, clearRecentFiles };
 }
 

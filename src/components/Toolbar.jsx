@@ -2,10 +2,11 @@ import { memo } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import "./Toolbar.css";
 
-const Toolbar = memo(function Toolbar({ 
-  currentFile, 
-  onOpenFile, 
-  theme, 
+const Toolbar = memo(function Toolbar({
+  currentFile,
+  displayUrl,
+  onOpenFile,
+  theme,
   onToggleTheme,
   canGoBack,
   canGoForward,
@@ -20,6 +21,7 @@ const Toolbar = memo(function Toolbar({
   isDirty,
   onSave,
   onOpenSettings,
+  isRemoteFile,
 }) {
   const handleFileInput = async () => {
     const selected = await open({
@@ -40,6 +42,24 @@ const Toolbar = memo(function Toolbar({
 
   const getFileName = () => {
     if (!currentFile) return "";
+
+    // For remote files, check if we have a displayUrl (original repo URL)
+    if (isRemoteFile && displayUrl) {
+      // Check if it's a GitHub repo URL pattern
+      const githubRepoPattern = /^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(\.git)?$/;
+      const match = displayUrl.match(githubRepoPattern);
+
+      if (match) {
+        const repoName = match[2];
+        return `${repoName} - README.md`;
+      }
+
+      // Otherwise extract filename from displayUrl
+      const parts = displayUrl.split(/[/\\]/);
+      return parts[parts.length - 1];
+    }
+
+    // For local files, extract filename normally
     const parts = currentFile.split(/[/\\]/);
     return parts[parts.length - 1];
   };
@@ -132,10 +152,11 @@ const Toolbar = memo(function Toolbar({
               </button>
             )}
             
-            <button 
-              className="toolbar-btn" 
+            <button
+              className="toolbar-btn"
               onClick={onToggleEdit}
-              title={isEditMode ? "View mode" : "Edit mode"}
+              disabled={isRemoteFile}
+              title={isRemoteFile ? "Cannot edit remote files" : (isEditMode ? "View mode" : "Edit mode")}
             >
               {isEditMode ? (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

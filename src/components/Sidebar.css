@@ -391,6 +391,62 @@
   background: rgba(255, 255, 255, 0.35);
 }
 
+.file-remove {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.5);
+  transition: all 0.15s ease;
+  opacity: 0;
+  pointer-events: none;
+  padding: 0;
+}
+
+:root[data-theme="dark"] .file-remove {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.file-list li:hover .file-remove {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.file-remove:hover {
+  background: rgba(255, 59, 48, 0.15);
+  color: #FF3B30;
+}
+
+:root[data-theme="dark"] .file-remove:hover {
+  background: rgba(255, 69, 58, 0.2);
+  color: #FF453A;
+}
+
+.file-remove:active {
+  transform: translateY(-50%) scale(0.9);
+}
+
+/* Adjust file-info to make room for delete button */
+.file-list li {
+  display: flex;
+  align-items: center;
+}
+
+.file-info {
+  flex: 1;
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;

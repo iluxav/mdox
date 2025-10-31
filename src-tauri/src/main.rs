@@ -6,6 +6,7 @@ mod commands;
 mod files;
 mod link_discovery;
 mod markdown;
+mod remote;
 
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder},
@@ -24,18 +25,26 @@ fn main() {
             commands::resolve_file_path,
             commands::save_file,
             commands::discover_linked_documents,
+            commands::fetch_remote_file,
+            commands::discover_remote_linked_documents,
         ])
         .setup({
             let cli_args = cli_args.clone();
             move |app| {
                 // Build native menu
-                let open_item = MenuItemBuilder::new("Open")
+                let open_item = MenuItemBuilder::new("Open...")
                     .id("open_file")
                     .accelerator("CmdOrCtrl+O")
                     .build(app)?;
 
+                let open_url_item = MenuItemBuilder::new("Open from URL...")
+                    .id("open_url")
+                    .accelerator("CmdOrCtrl+Shift+O")
+                    .build(app)?;
+
                 let file_submenu = SubmenuBuilder::new(app, "File")
                     .item(&open_item)
+                    .item(&open_url_item)
                     .separator()
                     .close_window()
                     .build()?;
@@ -50,6 +59,12 @@ fn main() {
                         if let Some(window) = app.get_webview_window("main") {
                             if let Err(e) = window.emit("menu-open-file", ()) {
                                 eprintln!("Failed to emit 'menu-open-file': {}", e);
+                            }
+                        }
+                    } else if event.id() == "open_url" {
+                        if let Some(window) = app.get_webview_window("main") {
+                            if let Err(e) = window.emit("menu-open-url", ()) {
+                                eprintln!("Failed to emit 'menu-open-url': {}", e);
                             }
                         }
                     }
