@@ -2,7 +2,15 @@
 
 A blazingly fast, cross-platform Markdown viewer and editor built with Rust + Tauri + React.
 
-![mdox Screenshot](Screenshot.png)
+![mdox Screenshot](docs/Screenshot.png)
+
+### Markdown Editing
+
+![mdox Screenshot](docs/Screenshot2.png)
+
+### Linked documents auto discovery
+
+![mdox Screenshot](docs/Screenshot3.png)
 
 ## Development
 
