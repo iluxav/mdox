@@ -201,25 +201,6 @@ function App() {
 
   return (
     <div className="app">
-      <Toolbar 
-        currentFile={currentFile} 
-        onOpenFile={openFile}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        canGoBack={navigation.canGoBack}
-        canGoForward={navigation.canGoForward}
-        onBack={handleBack}
-        onForward={handleForward}
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        sidebarOpen={sidebarOpen}
-        isEditMode={isEditMode}
-        onToggleEdit={toggleEditMode}
-        isSplitView={isSplitView}
-        onToggleSplit={toggleSplitView}
-        isDirty={isDirty}
-        onSave={handleSave}
-      />
-
       <div className="app-body">
         <Sidebar 
           isOpen={sidebarOpen}
@@ -229,40 +210,61 @@ function App() {
           onClose={() => setSidebarOpen(false)}
         />
 
-        <main className={`main-content ${isSplitView && isEditMode ? "split-view" : ""}`}>
-          {isLoading ? (
-            <div className="loading">Loading...</div>
-          ) : error ? (
-            <div className="error">
-              <h2>Error</h2>
-              <p>{error}</p>
-            </div>
-          ) : currentFile ? (
-            <>
-              {isEditMode && (
-                <Editor 
-                  ref={editorRef}
-                  content={editedContent}
-                  onChange={handleEditorChange}
-                  onSave={handleSave}
-                  theme={theme}
-                  onScroll={isSplitView ? handleEditorScroll : null}
-                />
-              )}
-              {(!isEditMode || isSplitView) && (
-                <Viewer 
-                  ref={viewerRef}
-                  htmlContent={htmlContent} 
-                  onLinkClick={handleLinkClick}
-                  currentFile={currentFile}
-                  onScroll={isSplitView ? handleViewerScroll : null}
-                />
-              )}
-            </>
-          ) : (
-            <EmptyState onOpenFile={openFile} />
-          )}
-        </main>
+        <div className="app-main">
+          <Toolbar 
+            currentFile={currentFile} 
+            onOpenFile={openFile}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            canGoBack={navigation.canGoBack}
+            canGoForward={navigation.canGoForward}
+            onBack={handleBack}
+            onForward={handleForward}
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            sidebarOpen={sidebarOpen}
+            isEditMode={isEditMode}
+            onToggleEdit={toggleEditMode}
+            isSplitView={isSplitView}
+            onToggleSplit={toggleSplitView}
+            isDirty={isDirty}
+            onSave={handleSave}
+          />
+
+          <main className={`main-content ${isSplitView && isEditMode ? "split-view" : ""}`}>
+            {isLoading ? (
+              <div className="loading">Loading...</div>
+            ) : error ? (
+              <div className="error">
+                <h2>Error</h2>
+                <p>{error}</p>
+              </div>
+            ) : currentFile ? (
+              <>
+                {isEditMode && (
+                  <Editor 
+                    ref={editorRef}
+                    content={editedContent}
+                    onChange={handleEditorChange}
+                    onSave={handleSave}
+                    theme={theme}
+                    onScroll={isSplitView ? handleEditorScroll : null}
+                  />
+                )}
+                {(!isEditMode || isSplitView) && (
+                  <Viewer 
+                    ref={viewerRef}
+                    htmlContent={htmlContent} 
+                    onLinkClick={handleLinkClick}
+                    currentFile={currentFile}
+                    onScroll={isSplitView ? handleViewerScroll : null}
+                  />
+                )}
+              </>
+            ) : (
+              <EmptyState onOpenFile={openFile} />
+            )}
+          </main>
+        </div>
       </div>
     </div>
   );
