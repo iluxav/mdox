@@ -1,0 +1,105 @@
+.input-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+  backdrop-filter: blur(4px);
+}
+
+.input-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 400px;
+  z-index: 9999;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.input-dialog h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.input-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.input-dialog-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input-dialog-input:focus {
+  border-color: var(--accent-color);
+}
+
+.input-dialog-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.input-dialog-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.input-dialog-button-cancel,
+.input-dialog-button-submit {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.input-dialog-button-cancel {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.input-dialog-button-cancel:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='dark'] .input-dialog-button-cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.input-dialog-button-submit {
+  background: var(--accent-color);
+  color: white;
+}
+
+.input-dialog-button-submit:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.input-dialog-button-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -284,6 +284,22 @@ If possible in background start a worker that traverse all the doc links and bui
 
 ---
 
+### Phase 7: Local document creation and management ✅ COMPLETE
+
+**Goal**: Add additional tab to sidebar "Documents" which should be the selected tab by default
+
+- [x] Add to settings screen the root folder where to save the files - use native directory picker of the operating system
+- [x] Add Documents tab that points to pre defined root file directory and shows folders and files tree
+- [x] Folders are expandable/collapsible with smooth animations
+- [x] Add icon buttons for create new File, create new folder, and delete
+- [x] The files and folders are draggable and droppable - same as file explorer
+- [x] Visual feedback for drag-over state
+- [x] Smart validation to prevent dropping folders into themselves
+
+**Deliverable**: Production-ready functionality application ✅
+
+---
+
 ## 🎨 UI/UX Considerations
 
 ### Visual Design
@@ -558,13 +574,64 @@ npm run tauri build
 - **Loading states**: Visual feedback while discovering linked documents
 - **Native styling**: Tabs match macOS native design with proper hover/active states
 - **Link icon**: Distinct icon for linked documents vs recent files
+- **Recent files management**: Delete button on hover to remove items from recent files list
+- **Non-blocking remote discovery**: Async link discovery using tokio::spawn_blocking
+- **UI responsiveness**: Main thread stays responsive during remote document discovery
 
 **Tech Stack:**
 
-- **Backend**: Rust, Tauri 2.0, pulldown-cmark, clap
+- **Backend**: Rust, Tauri 2.0, pulldown-cmark, clap, tokio
 - **Frontend**: React 18, Vite 5, CodeMirror 6, highlight.js
 - **Plugins**: tauri-plugin-shell, tauri-plugin-dialog
 - **Custom Hooks**: useNavigation, useRecentFiles, useTheme, useLinkedDocs
-- **Performance**: requestAnimationFrame, React.memo, useCallback, BFS traversal
+- **Performance**: requestAnimationFrame, React.memo, useCallback, BFS traversal, tokio async runtime
 
-**Next Steps:** Final testing and distribution builds
+**Recent Fixes:**
+
+- Fixed Cmd+V paste functionality in URL dialog with proper focus management
+- Fixed active state highlighting bug for remote vs local files
+- Converted remote link discovery to async with tokio::spawn_blocking to prevent UI freezing
+- Added delete functionality for recent files with hover-based X button
+
+---
+
+### ✅ Phase 7: Local Document Creation and Management - COMPLETE
+
+**Implemented Features:**
+
+- **Root directory management**: Settings panel with native OS directory picker
+- **Documents tab**: New default tab in sidebar showing file/folder tree from root directory
+- **File tree component**: Hierarchical display of files and folders with lazy loading
+- **Expandable folders**: Smooth expand/collapse animations with visual indicators
+- **Action buttons**: New File, New Folder, and Delete operations with prompts
+- **Drag and drop**: Full drag-and-drop support for moving files/folders
+- **Visual feedback**: Drag-over state with dashed border and highlighting
+- **Smart validation**: Prevents dropping folders into themselves or same location
+- **Delete on hover**: Delete buttons appear on hover for individual items
+- **Persistent storage**: Root directory saved to localStorage
+- **Empty state handling**: Helpful messages when no directory selected or directory empty
+**Backend Commands:**
+
+- `read_directory`: Lists files and folders with metadata (name, path, is_directory)
+- `create_directory`: Creates folders with full path support
+- `delete_file_or_directory`: Deletes files or recursively deletes folders
+- `rename_file_or_directory`: Moves/renames files and folders
+
+**Components:**
+
+- `FileTree.jsx`: Main file tree component with lazy loading
+- `FileTreeItem.jsx`: Individual tree item with expand/collapse
+- `useRootDirectory.js`: Custom hook for root directory management
+- Updated `Settings.jsx`: Root directory picker UI
+- Updated `Sidebar.jsx`: Three tabs - Documents (default), Recent, Linked
+
+**User Experience:**
+
+- New File Command (Cmd+N): Creates untitled markdown document in edit mode
+- Save As Dialog (Cmd+Shift+S): Native file save dialog
+- Click files in Documents tab to open them
+- Drag files/folders to reorganize
+- Delete with confirmation prompts
+- Smooth animations and transitions
+
+**Deliverable**: Full document lifecycle management ✅

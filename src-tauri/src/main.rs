@@ -24,6 +24,11 @@ fn main() {
             commands::parse_markdown,
             commands::resolve_file_path,
             commands::save_file,
+            commands::file_exists,
+            commands::read_directory,
+            commands::create_directory,
+            commands::delete_file_or_directory,
+            commands::rename_file_or_directory,
             commands::discover_linked_documents,
             commands::fetch_remote_file,
             commands::discover_remote_linked_documents,
@@ -32,6 +37,11 @@ fn main() {
             let cli_args = cli_args.clone();
             move |app| {
                 // Build native menu
+                let new_file_item = MenuItemBuilder::new("New File")
+                    .id("new_file")
+                    .accelerator("CmdOrCtrl+N")
+                    .build(app)?;
+
                 let open_item = MenuItemBuilder::new("Open...")
                     .id("open_file")
                     .accelerator("CmdOrCtrl+O")
@@ -42,9 +52,18 @@ fn main() {
                     .accelerator("CmdOrCtrl+Shift+O")
                     .build(app)?;
 
+                let save_as_item = MenuItemBuilder::new("Save As...")
+                    .id("save_as")
+                    .accelerator("CmdOrCtrl+Shift+S")
+                    .build(app)?;
+
                 let file_submenu = SubmenuBuilder::new(app, "File")
+                    .item(&new_file_item)
+                    .separator()
                     .item(&open_item)
                     .item(&open_url_item)
+                    .separator()
+                    .item(&save_as_item)
                     .separator()
                     .close_window()
                     .build()?;
@@ -55,7 +74,13 @@ fn main() {
 
                 // Handle menu events
                 app.on_menu_event(move |app, event| {
-                    if event.id() == "open_file" {
+                    if event.id() == "new_file" {
+                        if let Some(window) = app.get_webview_window("main") {
+                            if let Err(e) = window.emit("menu-new-file", ()) {
+                                eprintln!("Failed to emit 'menu-new-file': {}", e);
+                            }
+                        }
+                    } else if event.id() == "open_file" {
                         if let Some(window) = app.get_webview_window("main") {
                             if let Err(e) = window.emit("menu-open-file", ()) {
                                 eprintln!("Failed to emit 'menu-open-file': {}", e);
@@ -65,6 +90,12 @@ fn main() {
                         if let Some(window) = app.get_webview_window("main") {
                             if let Err(e) = window.emit("menu-open-url", ()) {
                                 eprintln!("Failed to emit 'menu-open-url': {}", e);
+                            }
+                        }
+                    } else if event.id() == "save_as" {
+                        if let Some(window) = app.get_webview_window("main") {
+                            if let Err(e) = window.emit("menu-save-as", ()) {
+                                eprintln!("Failed to emit 'menu-save-as': {}", e);
                             }
                         }
                     }

@@ -1,4 +1,5 @@
 import { memo, useState, useRef, useEffect } from "react";
+import FileTree from "./FileTree";
 import "./Sidebar.css";
 
 const Sidebar = memo(function Sidebar({
@@ -10,10 +11,11 @@ const Sidebar = memo(function Sidebar({
   displayUrl,
   onFileSelect,
   onRemoveRecent,
-  onClose
+  onClose,
+  rootDirectory
 }) {
-  const [activeTab, setActiveTab] = useState("recent");
-  const [width, setWidth] = useState(260);
+  const [activeTab, setActiveTab] = useState("documents");
+  const [width, setWidth] = useState(360);
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef(null);
 
@@ -111,13 +113,19 @@ const Sidebar = memo(function Sidebar({
     >
       <div className="sidebar-header">
         <div className="sidebar-tabs">
-          <button 
+          <button
+            className={`sidebar-tab ${activeTab === "documents" ? "active" : ""}`}
+            onClick={() => setActiveTab("documents")}
+          >
+            Documents
+          </button>
+          <button
             className={`sidebar-tab ${activeTab === "recent" ? "active" : ""}`}
             onClick={() => setActiveTab("recent")}
           >
             Recent
           </button>
-          <button 
+          <button
             className={`sidebar-tab ${activeTab === "linked" ? "active" : ""}`}
             onClick={() => setActiveTab("linked")}
           >
@@ -133,6 +141,14 @@ const Sidebar = memo(function Sidebar({
       </div>
 
       <div className="sidebar-content">
+        {activeTab === "documents" && (
+          <FileTree
+            rootPath={rootDirectory}
+            onFileClick={onFileSelect}
+            selectedPath={currentFile}
+          />
+        )}
+
         {activeTab === "recent" && (
           <>
             {recentFiles.length === 0 ? (

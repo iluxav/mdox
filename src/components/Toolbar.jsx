@@ -41,7 +41,7 @@ const Toolbar = memo(function Toolbar({
   };
 
   const getFileName = () => {
-    if (!currentFile) return "";
+    if (!currentFile) return "Untitled";
 
     // For remote files, check if we have a displayUrl (original repo URL)
     if (isRemoteFile && displayUrl) {
@@ -111,7 +111,7 @@ const Toolbar = memo(function Toolbar({
       </div>
 
       <div className="toolbar-center">
-        {currentFile ? (
+        {(currentFile || isEditMode) ? (
           <span className="file-name">
             {isDirty && <span className="dirty-indicator">● </span>}
             {getFileName()}
@@ -122,7 +122,7 @@ const Toolbar = memo(function Toolbar({
       </div>
 
       <div className="toolbar-right">
-        {currentFile && (
+        {(currentFile || isEditMode) && (
           <>
             {isEditMode && (
               <button 

@@ -27,6 +27,31 @@ pub fn save_file(path: String, content: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn file_exists(path: String) -> bool {
+    files::file_exists(&path)
+}
+
+#[tauri::command]
+pub fn read_directory(path: String) -> Result<Vec<files::FileEntry>, String> {
+    files::read_directory(&path)
+}
+
+#[tauri::command]
+pub fn create_directory(path: String) -> Result<(), String> {
+    files::create_directory(&path)
+}
+
+#[tauri::command]
+pub fn delete_file_or_directory(path: String) -> Result<(), String> {
+    files::delete_file_or_directory(&path)
+}
+
+#[tauri::command]
+pub fn rename_file_or_directory(old_path: String, new_path: String) -> Result<(), String> {
+    files::rename_file_or_directory(&old_path, &new_path)
+}
+
+#[tauri::command]
 pub fn discover_linked_documents(root_path: String, max_depth: usize) -> Result<Vec<link_discovery::LinkedDocument>, String> {
     link_discovery::discover_linked_documents(&root_path, max_depth)
 }

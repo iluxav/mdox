@@ -5,6 +5,7 @@ import { useTheme } from "./hooks/useTheme";
 import { useNavigation } from "./hooks/useNavigation";
 import { useRecentFiles } from "./hooks/useRecentFiles";
 import { useLinkedDocs } from "./hooks/useLinkedDocs";
+import { useRootDirectory } from "./hooks/useRootDirectory";
 import Viewer from "./components/Viewer";
 import Editor from "./components/Editor";
 import Toolbar from "./components/Toolbar";
@@ -19,6 +20,7 @@ function App() {
   const { theme, toggleTheme } = useTheme();
   const navigation = useNavigation();
   const { recentFiles, addRecentFile, removeRecentFile } = useRecentFiles();
+  const { rootDirectory, selectRootDirectory, clearRootDirectory } = useRootDirectory();
   
   const [currentFile, setCurrentFile] = useState(null);
   const [rootFile, setRootFile] = useState(null); // The main entry point file for link discovery
@@ -190,7 +192,13 @@ function App() {
   }, [fileContent, currentFile]);
 
   const handleSave = async () => {
-    if (!currentFile || !isDirty) return;
+    if (!isDirty) return;
+
+    // If no current file (untitled), trigger Save As dialog
+    if (!currentFile) {
+      handleSaveAs();
+      return;
+    }
 
     // Prevent saving remote files
     if (isRemoteFile) {
@@ -214,9 +222,82 @@ function App() {
     }
   };
 
+  const handleNewFile = useCallback(() => {
+    // Check if there are unsaved changes
+    if (isDirty && currentFile) {
+      const confirmed = window.confirm("You have unsaved changes. Do you want to discard them?");
+      if (!confirmed) return;
+    }
+
+    // Create new untitled document
+    const untitledContent = "# Untitled\n\nStart writing your markdown here...";
+
+    setCurrentFile(null); // No file path yet (will be set on first save)
+    setRootFile(null);
+    setDisplayUrl(null);
+    setFileContent(untitledContent);
+    setEditedContent(untitledContent);
+    setHtmlContent(""); // Will be rendered when switching to view mode
+    setIsRemoteFile(false);
+    setIsDirty(true); // Mark as dirty since it's new content
+    setIsEditMode(true); // Start in edit mode for new files
+    setError(null);
+  }, [isDirty, currentFile]);
+
+  const handleSaveAs = useCallback(async () => {
+    // Can save as from any state (new file, existing file, remote file)
+    const contentToSave = isEditMode ? editedContent : fileContent;
+
+    try {
+      const { save } = await import("@tauri-apps/plugin-dialog");
+      const filePath = await save({
+        filters: [
+          {
+            name: "Markdown",
+            extensions: ["md", "markdown"],
+          },
+        ],
+        defaultPath: currentFile || "Untitled.md",
+      });
+
+      if (filePath) {
+        // Save the file
+        await invoke("save_file", {
+          path: filePath,
+          content: contentToSave
+        });
+
+        // Update state to reflect the new file
+        setCurrentFile(filePath);
+        setRootFile(filePath);
+        setDisplayUrl(null);
+        setFileContent(contentToSave);
+        setEditedContent(contentToSave);
+        setIsRemoteFile(false);
+        setIsDirty(false);
+        setError(null);
+
+        // Add to recent files and navigation history
+        addRecentFile(filePath);
+        navigation.addToHistory(filePath);
+      }
+    } catch (err) {
+      const errorMessage = typeof err === 'string' ? err : err.message || 'Unknown error occurred';
+      setError(`Failed to save file: ${errorMessage}`);
+      console.error("Error saving file:", err);
+      alert(`Failed to save file: ${errorMessage}`);
+    }
+  }, [currentFile, fileContent, editedContent, isEditMode, isRemoteFile, addRecentFile, navigation]);
+
   const toggleEditMode = useCallback(() => {
-    if (!currentFile) return;
-    setIsEditMode(!isEditMode);
+    // Allow toggle for existing files or when already in edit mode (untitled docs)
+    if (!currentFile && !isEditMode) return;
+    const newEditMode = !isEditMode;
+    setIsEditMode(newEditMode);
+    // Enable split view by default when entering edit mode
+    if (newEditMode) {
+      setIsSplitView(true);
+    }
   }, [currentFile, isEditMode]);
 
   const toggleSplitView = useCallback(() => {
@@ -394,12 +475,24 @@ function App() {
       setUrlDialogOpen(true);
     });
 
+    const unlistenMenuNewFile = listen("menu-new-file", () => {
+      // Menu triggered new file - create untitled document
+      handleNewFile();
+    });
+
+    const unlistenMenuSaveAs = listen("menu-save-as", () => {
+      // Menu triggered save as
+      handleSaveAs();
+    });
+
     return () => {
       unlistenFileToOpen.then((fn) => fn());
       unlistenMenuOpen.then((fn) => fn());
       unlistenMenuOpenUrl.then((fn) => fn());
+      unlistenMenuNewFile.then((fn) => fn());
+      unlistenMenuSaveAs.then((fn) => fn());
     };
-  }, [openFile]);
+  }, [openFile, handleNewFile, handleSaveAs]);
 
   // Drag and drop file opening using Tauri's event system
   useEffect(() => {
@@ -499,16 +592,29 @@ function App() {
       // Allow Cmd+V and other basic editing shortcuts in input fields
       if (isInput && !(event.key === 's' || event.key === 'e' || event.key === 'p' ||
           event.key === '\\' || event.key === 't' || event.key === '[' ||
-          event.key === ']' || event.key === 'f' || event.key === ',' || event.key === 'O')) {
+          event.key === ']' || event.key === 'f' || event.key === ',' || event.key === 'O' ||
+          event.key === 'n' || event.key === 'S')) {
         return; // Let the browser handle it
       }
 
+      // Cmd/Ctrl + N: New file
+      if ((event.metaKey || event.ctrlKey) && event.key === 'n' && !event.shiftKey) {
+        event.preventDefault();
+        handleNewFile();
+      }
+
       // Cmd/Ctrl + S: Save file
-      if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+      if ((event.metaKey || event.ctrlKey) && event.key === 's' && !event.shiftKey) {
         event.preventDefault();
         if (isDirty && isEditMode) {
           handleSave();
         }
+      }
+
+      // Cmd/Ctrl + Shift + S: Save As
+      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'S') {
+        event.preventDefault();
+        handleSaveAs();
       }
       
       // Cmd/Ctrl + E: Toggle edit mode
@@ -580,7 +686,7 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isDirty, isEditMode, isSplitView, currentFile, sidebarOpen, navigation, theme]);
+  }, [isDirty, isEditMode, isSplitView, currentFile, sidebarOpen, navigation, theme, handleNewFile, handleSaveAs, handleSave, toggleEditMode, toggleSplitView, toggleTheme, searchOpen, settingsOpen]);
 
   return (
     <div className={`app ${isDragging ? 'dragging' : ''}`}>
@@ -595,6 +701,9 @@ function App() {
         onClose={() => setSettingsOpen(false)}
         theme={theme}
         onToggleTheme={toggleTheme}
+        rootDirectory={rootDirectory}
+        onSelectRootDirectory={selectRootDirectory}
+        onClearRootDirectory={clearRootDirectory}
       />
 
       <UrlDialog
@@ -614,6 +723,7 @@ function App() {
           onFileSelect={openFileOrUrl}
           onRemoveRecent={removeRecentFile}
           onClose={() => setSidebarOpen(false)}
+          rootDirectory={rootDirectory}
         />
 
         <div className="app-main">

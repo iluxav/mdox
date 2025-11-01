@@ -1,7 +1,7 @@
 import { memo } from "react";
 import "./Settings.css";
 
-const Settings = memo(function Settings({ isOpen, onClose, theme, onToggleTheme }) {
+const Settings = memo(function Settings({ isOpen, onClose, theme, onToggleTheme, rootDirectory, onSelectRootDirectory, onClearRootDirectory }) {
   if (!isOpen) return null;
 
   return (
@@ -19,6 +19,35 @@ const Settings = memo(function Settings({ isOpen, onClose, theme, onToggleTheme 
         </div>
 
         <div className="settings-content">
+          <div className="settings-section">
+            <h3>Documents</h3>
+            <div className="setting-item">
+              <div className="setting-info">
+                <label>Root Directory</label>
+                <span className="setting-description">
+                  {rootDirectory ? rootDirectory : 'No directory selected'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="setting-toggle" onClick={onSelectRootDirectory}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  {rootDirectory ? 'Change' : 'Select'}
+                </button>
+                {rootDirectory && (
+                  <button className="setting-toggle" onClick={onClearRootDirectory}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="settings-section">
             <h3>Appearance</h3>
             <div className="setting-item">
@@ -57,6 +86,22 @@ const Settings = memo(function Settings({ isOpen, onClose, theme, onToggleTheme 
           <div className="settings-section">
             <h3>Keyboard Shortcuts</h3>
 
+            <h4 className="shortcuts-category">File Management</h4>
+            <div className="shortcuts-list">
+              <div className="shortcut-item">
+                <span>New File</span>
+                <kbd>Ctrl/Cmd + N</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span>Save File</span>
+                <kbd>Ctrl/Cmd + S</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span>Save As</span>
+                <kbd>Ctrl/Cmd + Shift + S</kbd>
+              </div>
+            </div>
+
             <h4 className="shortcuts-category">General</h4>
             <div className="shortcuts-list">
               <div className="shortcut-item">
@@ -78,10 +123,6 @@ const Settings = memo(function Settings({ isOpen, onClose, theme, onToggleTheme 
               <div className="shortcut-item">
                 <span>Search</span>
                 <kbd>Ctrl/Cmd + F</kbd>
-              </div>
-              <div className="shortcut-item">
-                <span>Save File</span>
-                <kbd>Ctrl/Cmd + S</kbd>
               </div>
               <div className="shortcut-item">
                 <span>Go Back</span>
