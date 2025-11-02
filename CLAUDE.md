@@ -635,3 +635,42 @@ npm run tauri build
 - Smooth animations and transitions
 
 **Deliverable**: Full document lifecycle management ✅
+
+---
+
+### ✅ Phase 8: Code Signing & Distribution - COMPLETE
+
+**Goal**: Set up ad-hoc code signing for macOS distribution
+
+- [x] Configure ad-hoc signing in tauri.conf.json
+- [x] Enable hardened runtime for security
+- [x] Simplify GitHub Actions workflow (removed certificate steps)
+- [x] Build and verify ad-hoc signed app
+- [x] Create comprehensive installation guide (INSTALLATION.md)
+- [x] Document Gatekeeper bypass methods
+- [x] Update README with security notice
+- [x] Create Homebrew formula template
+
+**Implementation:**
+
+- **macOS Signing**: `signingIdentity: "-"` for ad-hoc signing
+- **Hardened Runtime**: Enabled for basic security hardening
+- **Build Output**: 6.4 MB DMG with proper signature
+- **User Experience**: One-time right-click → Open bypass
+- **Documentation**: Clear instructions in INSTALLATION.md
+
+**Code Signature Details:**
+```
+Signature=adhoc
+Runtime Version=15.5.0
+Format=app bundle with Mach-O thin (arm64)
+Flags=adhoc,runtime
+```
+
+**Distribution Strategy:**
+- Ad-hoc signed builds (no Apple Developer certificate required)
+- Users bypass Gatekeeper with right-click → Open (one-time)
+- Future: Homebrew distribution for easier installation
+- No cost for open-source distribution
+
+**Deliverable**: Production-ready macOS app with ad-hoc signing ✅

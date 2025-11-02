@@ -46,6 +46,8 @@ open mdox_*.dmg
 /Applications/mdox.app/Contents/MacOS/mdox
 ```
 
+**Note**: macOS will show a security warning on first launch because mdox is not code-signed with an Apple Developer certificate ($99/year). This is normal for open-source apps. Simply **right-click → Open** to bypass. See [INSTALLATION.md](INSTALLATION.md) for details.
+
 ### Windows Installation
 
 ```bash
