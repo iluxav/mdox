@@ -140,10 +140,10 @@ npm run tauri build -- --target universal-apple-darwin
 
 This project uses GitHub Actions for automated builds:
 
-- **Build Workflow**: Runs on every push to `main` and creates artifacts
-- **Release Workflow**: Triggered by version tags (e.g., `v1.0.0`) and creates GitHub releases
+- **Build Workflow**: Triggered by version tags and creates build artifacts
+- **Release Workflow**: Triggered by version tags and creates GitHub releases with binaries
 
-To create a new release:
+Both workflows run when you push a version tag. To create a new release:
 
 ```bash
 # Tag a new version
@@ -151,10 +151,15 @@ git tag v1.0.0
 git push origin v1.0.0
 
 # GitHub Actions will automatically:
-# 1. Build for macOS, Windows, and Linux
-# 2. Create a draft release
-# 3. Upload all binaries as release assets
+# 1. Build for macOS (Universal), Windows, and Linux
+# 2. Create build artifacts (downloadable from Actions tab)
+# 3. Create a draft GitHub release
+# 4. Upload all binaries as release assets to the release
 ```
+
+After the workflows complete, you can:
+- Download artifacts from the **Actions** tab for testing
+- Edit and publish the draft release from the **Releases** page
 
 ## Contributing
 
